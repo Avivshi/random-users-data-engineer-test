@@ -1,0 +1,7 @@
+[{
+  "host": "<your_host>",
+  "database": "<your_database>",
+  "user": "<your_user>",
+  "port": "<your_port>",
+  "password": "<your_password>"
+}]

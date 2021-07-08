@@ -7,7 +7,8 @@ from sqlalchemy_utils import create_database, database_exists
 class RandomUsers:
 
     def __init__(self):
-        db_url = 'mysql+mysqlconnector://{<your_username>}:{<your_password>}@{<your_host>}:{<your_port>}/{<your_db>}'
+        details = pd.read_json('connection_details.json').iloc[0]
+        db_url = f'mysql+mysqlconnector://{details.user}:{details.password}@{details.host}:{details.port}/{details.database}'
         if not database_exists(db_url):
             create_database(db_url)
         self._engine = create_engine(db_url)
@@ -22,14 +23,14 @@ class RandomUsers:
 
     def split_to_subsets(self):
         subsets = []
-        minimum = 0
-        maximum = 10
+        minimum = 10
+        maximum = 20
 
-        while maximum <= 100:
+        while maximum <= 110:
             subset = self._users[(self._users['dob.age'] >= minimum) & (self._users['dob.age'] < maximum)]
             subsets.append(subset)
+            minimum = maximum
             maximum += 10
-            minimum += 10
 
         for index, subset in enumerate(subsets):
             self.store_in_db(subset, f'aviv_shimoni_test_{index + 1}')
@@ -37,7 +38,7 @@ class RandomUsers:
     def top_20_last_registered_users(self):
         query = '''SELECT * FROM aviv_shimoni_test_male 
         UNION 
-        SELECT * FROM  aviv_shimoni_test_female ORDER BY `registered.date` DESC LIMIT 20 '''
+        SELECT * FROM  aviv_shimoni_test_female ORDER BY `registered.date` DESC LIMIT 20'''
         top_20 = pd.read_sql(query, self._engine)
         self.store_in_db(top_20, 'aviv_shimoni_test_20')
 
@@ -54,7 +55,7 @@ class RandomUsers:
 
     def store_in_db(self, df, table_name):
         self._engine.execute(f"DROP TABLE IF EXISTS {table_name}")
-        df.to_sql(con=self._engine, name=table_name, if_exists='append', index=False)
+        df.to_sql(con=self._engine, name=table_name, index=False)
 
     def main(self):
         self.split_by_gender()
